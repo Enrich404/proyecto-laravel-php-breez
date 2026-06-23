@@ -49,14 +49,24 @@ class GuideController extends Controller
 
     public function store(StoreGuideRequest $request): RedirectResponse
     {
-        $file = $request->file('file');
-        $path = $file->store('guides', 'public');
+        $data = $request->safe()->except(['pdf', 'images']);
 
-        $request->user()->guides()->create([
-            ...$request->safe()->except('file'),
-            'file_path' => $path,
-            'file_type' => $file->getMimeType() ?: $file->getClientMimeType(),
-        ]);
+        if ($request->hasFile('pdf')) {
+            $pdf = $request->file('pdf');
+            $data['pdf_path'] = $pdf->store('guides/pdfs', 'public');
+            $data['pdf_type'] = $pdf->getMimeType() ?: $pdf->getClientMimeType();
+        }
+
+        if ($request->hasFile('images')) {
+            $paths = [];
+            foreach ($request->file('images') as $image) {
+                $paths[] = $image->store('guides/images', 'public');
+            }
+
+            $data['image_paths'] = $paths;
+        }
+
+        $request->user()->guides()->create($data);
 
         return redirect()->route('guides.mine')->with('status', 'Guia publicada correctamente.');
     }
@@ -80,15 +90,32 @@ class GuideController extends Controller
     public function update(UpdateGuideRequest $request, Guide $guide): RedirectResponse
     {
         $this->ensureOwner($guide);
+        $data = $request->safe()->except(['pdf', 'images']);
 
-        $data = $request->safe()->except('file');
+        if ($request->hasFile('pdf')) {
+            if ($guide->pdf_path) {
+                Storage::disk('public')->delete($guide->pdf_path);
+            }
 
-        if ($request->hasFile('file')) {
-            Storage::disk('public')->delete($guide->file_path);
+            $pdf = $request->file('pdf');
+            $data['pdf_path'] = $pdf->store('guides/pdfs', 'public');
+            $data['pdf_type'] = $pdf->getMimeType() ?: $pdf->getClientMimeType();
+        }
 
-            $file = $request->file('file');
-            $data['file_path'] = $file->store('guides', 'public');
-            $data['file_type'] = $file->getMimeType() ?: $file->getClientMimeType();
+        if ($request->hasFile('images')) {
+            // delete previous images
+            if (is_array($guide->image_paths)) {
+                foreach ($guide->image_paths as $old) {
+                    Storage::disk('public')->delete($old);
+                }
+            }
+
+            $paths = [];
+            foreach ($request->file('images') as $image) {
+                $paths[] = $image->store('guides/images', 'public');
+            }
+
+            $data['image_paths'] = $paths;
         }
 
         $guide->update($data);
@@ -99,8 +126,16 @@ class GuideController extends Controller
     public function destroy(Guide $guide): RedirectResponse
     {
         $this->ensureOwner($guide);
+        if ($guide->pdf_path) {
+            Storage::disk('public')->delete($guide->pdf_path);
+        }
 
-        Storage::disk('public')->delete($guide->file_path);
+        if (is_array($guide->image_paths)) {
+            foreach ($guide->image_paths as $img) {
+                Storage::disk('public')->delete($img);
+            }
+        }
+
         $guide->delete();
 
         return redirect()->route('guides.mine')->with('status', 'Guia eliminada.');

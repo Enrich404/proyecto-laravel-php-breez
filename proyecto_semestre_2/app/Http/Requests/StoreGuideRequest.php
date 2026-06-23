@@ -22,7 +22,9 @@ class StoreGuideRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1500'],
             'category' => ['required', 'string', 'max:80'],
             'visibility' => ['required', Rule::in(['public', 'private'])],
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+            'pdf' => ['nullable', 'file', 'mimes:pdf', 'max:10240', 'required_without:images'],
+            'images' => ['nullable', 'array', 'required_without:pdf'],
+            'images.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ];
     }
 }
