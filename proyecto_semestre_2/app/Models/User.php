@@ -23,6 +23,11 @@ class User extends Authenticatable
         return $this->hasMany(Guide::class);
     }
 
+    public function respuestasDiagnostico(): HasMany
+    {
+        return $this->hasMany(DiagnosticoRespuesta::class, 'user_id');
+    }
+
     /**
      * Get the attributes that should be cast.
      *
