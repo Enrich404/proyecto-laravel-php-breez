@@ -26,6 +26,11 @@
                         @auth
                             <a href="{{ route('guides.mine') }}" class="rounded px-3 py-2 text-zinc-300 hover:bg-white/10 hover:text-white">Mis guias</a>
                             <a href="{{ route('guides.create') }}" class="rounded bg-emerald-400 px-4 py-2 text-zinc-950 hover:bg-emerald-300">Publicar</a>
+
+                            <form method="POST" action="{{ route('logout') }}" class="inline">
+                                @csrf
+                                <button type="submit" class="rounded px-3 py-2 text-zinc-300 hover:bg-white/10 hover:text-white">Cerrar sesión</button>
+                            </form>
                         @else
                             <a href="{{ route('login') }}" class="rounded px-3 py-2 text-zinc-300 hover:bg-white/10 hover:text-white">Ingresar</a>
                             <a href="{{ route('register') }}" class="rounded bg-emerald-400 px-4 py-2 text-zinc-950 hover:bg-emerald-300">Crear cuenta</a>
